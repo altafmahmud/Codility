@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <map>
 #include <unordered_set>
 #include <algorithm>
 #include <numeric>
@@ -34,8 +35,6 @@ public:
         {
             indexMap.emplace(std::make_pair(A[idx], idx));
         }
-        auto B = A;
-        std::sort(B.begin(), B.end(), std::greater<>());
         auto maxSum = 0;
         do
         {
@@ -44,28 +43,23 @@ public:
             bookedIdxMap.clear();
             blockerIdxSet.clear();
             isAlternativeTaken = false;
-            for (const auto elem : B)
+            for (const auto &[num, numIdx] : indexMap)
             {
-                const auto rng = indexMap.equal_range(elem);
-                for (auto itr = rng.first; itr != rng.second && resVecIdx < resVec.capacity(); ++itr)
+                const auto bookedBy = indexBookedBy(numIdx);
+                if (bookedBy >= 0)
                 {
-                    const auto numIdx = itr->second;
-                    const auto bookedBy = indexBookedBy(numIdx);
-                    if (bookedBy >= 0)
-                    {
-                        saveAsBlockerIdx(bookedBy);
-                        continue;
-                    }
-                    const auto neighbourIdx = getMaxNeighbourIdx(A, numIdx);
-                    if (neighbourIdx < 0)
-                    {
-                        continue;
-                    }
-                    resVec.push_back(A[numIdx]);
-                    resVec.push_back(A[neighbourIdx]);
-                    bookIndex(neighbourIdx, numIdx);
-                    resVecIdx += 2;
+                    saveAsBlockerIdx(bookedBy);
+                    continue;
                 }
+                const auto neighbourIdx = getMaxNeighbourIdx(A, numIdx);
+                if (neighbourIdx < 0)
+                {
+                    continue;
+                }
+                resVec.push_back(num);
+                resVec.push_back(A[neighbourIdx]);
+                bookIndex(neighbourIdx, numIdx);
+                resVecIdx += 2;
                 if (resVecIdx >= resVec.capacity())
                 {
                     break;
@@ -236,7 +230,7 @@ private:
         return blockerIdxSet.find(index) != blockerIdxSet.end();
     }
 
-    std::unordered_multimap<int, int> indexMap;
+    std::multimap<int, int, std::greater<>> indexMap;
     std::unordered_map<int, int> bookedIdxMap;
     std::unordered_set<int> blockerIdxSet;
     std::unordered_map<int, int> alternativesMap;
